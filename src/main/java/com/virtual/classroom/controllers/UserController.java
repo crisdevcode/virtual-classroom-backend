@@ -5,31 +5,48 @@ import com.virtual.classroom.entities.User;
 import com.virtual.classroom.entities.UserRole;
 import com.virtual.classroom.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/users/")
+@CrossOrigin("*")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
+    @Autowired
+    public BCryptPasswordEncoder bCryptPasswordEncoder;
+
     @PostMapping("/")
     public User saveUser(@RequestBody User user) throws  Exception {
-        Set<UserRole> roles = new HashSet<>();
+        user.setProfile("default.png");
 
+        // Encrypt password
+        user.setPassword(this.bCryptPasswordEncoder.encode(user.getPassword()));
+
+        // Roles Object
+        Set<UserRole> userRoles = new HashSet<>();
+
+        // Create Role
         Role role = new Role();
         role.setRoleId(2L);
         role.setName("NORMAL");
 
+        // Create user with role
         UserRole userRole = new UserRole();
         userRole.setUser(user);
         userRole.setRole(role);
-        System.out.println(user);
-        return userService.saveUser(user, roles);
+
+        // Add user with role
+        userRoles.add(userRole);
+
+        // Store in database
+        return userService.saveUser(user, userRoles);
     }
 
     @GetMapping("/{username}")
